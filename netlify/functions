@@ -1,8 +1,21 @@
-[build]
-  functions = "netlify/functions"
-  publish = "frontend"
+exports.handler = async (event) => {
+  const params = new URLSearchParams(event.body);
+  const text = params.get('text') || '';
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+  const aiKeywords = ['ChatGPT','As an AI','In conclusion','AI model','large language model'];
+  let count = 0;
+  aiKeywords.forEach(keyword => {
+    if (text.toLowerCase().includes(keyword.toLowerCase())) count++;
+  });
+
+  const score = (count / Math.max(1, text.length)) * 10000;
+  let status = 'Human-written';
+  if (score > 1.5) status = 'AI-generated';
+  else if (score > 0.5) status = 'Rewritten/Spun';
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ status, score: Math.round(score * 100) / 100 }),
+    headers: { 'Content-Type': 'application/json' }
+  };
+};
